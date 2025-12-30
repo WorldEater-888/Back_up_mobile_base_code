@@ -8,7 +8,7 @@
     
     <style>
         /* ================================================================================== */
-        /* ============================   CSS: THEME & GLOBALS   ============================ */
+        /* ============================    CSS: THEME & GLOBALS    ============================ */
         /* ================================================================================== */
         :root {
             /* COLORS */
@@ -55,7 +55,7 @@
         }
 
         /* ================================================================================== */
-        /* ============================   CSS: CRT & BACKGROUND  ============================ */
+        /* ============================    CSS: CRT & BACKGROUND   ============================ */
         /* ================================================================================== */
         .scan-line {
             position: fixed;
@@ -101,7 +101,7 @@
         }
 
         /* ================================================================================== */
-        /* ============================   CSS: TERMINAL WINDOW   ============================ */
+        /* ============================    CSS: TERMINAL WINDOW    ============================ */
         /* ================================================================================== */
         .terminal-window {
             width: 100%; height: 100%;
@@ -216,7 +216,7 @@
         }
 
         /* ================================================================================== */
-        /* ============================   CSS: MENU & BUTTONS    ============================ */
+        /* ============================    CSS: MENU & BUTTONS     ============================ */
         /* ================================================================================== */
         .menu-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 5px; overflow-y: auto; padding-bottom: 20px; }
 
@@ -254,7 +254,7 @@
         .nav-btn:active { background: var(--term-color); color: #000; box-shadow: 0 0 40px var(--term-color); }
 
         /* ================================================================================== */
-        /* ============================   CSS: QUIZ ELEMENTS     ============================ */
+        /* ============================    CSS: QUIZ ELEMENTS      ============================ */
         /* ================================================================================== */
         .quiz-container { display: flex; flex-direction: column; flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 90px; }
         .quiz-header-bar { display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--term-color); padding-bottom: 5px; margin-bottom: 10px; font-size: 1.2rem; }
@@ -288,7 +288,7 @@
         .match-item.wrong { background: #a00; color: #fff; box-shadow: 0 0 15px #f00; }
 
         /* ================================================================================== */
-        /* ============================   CSS: ANIMATIONS        ============================ */
+        /* ============================    CSS: ANIMATIONS       ============================ */
         /* ================================================================================== */
         @keyframes turnOn { 0% { transform: scaleY(0.005) scaleX(0); opacity: 0; filter: brightness(4); } 60% { transform: scaleY(0.005) scaleX(1); opacity: 1; filter: brightness(2); } 100% { transform: scaleY(1) scaleX(1); opacity: 1; filter: brightness(1); } }
         @keyframes stress-shake { 0% { transform: translate(0, 0); } 20% { transform: translate(-1px, 1px); } 40% { transform: translate(1px, -1px); } 60% { transform: translate(-0.5px, 0.5px); } 80% { transform: translate(0.5px, -0.5px); } 100% { transform: translate(0, 0); } }
@@ -468,7 +468,7 @@
 </div>
 
 <script>
-    /* ============================   JS: AUDIO ENGINE       ============================ */
+    /* ============================    JS: AUDIO ENGINE        ============================ */
     const AudioEngine = {
         ctx: null, masterGain: null, delayNode: null, isPlaying: false, isMuted: false, 
         init: function() {
@@ -523,16 +523,14 @@
         }
     };
 
-    /* ============================   JS: DATABASE & GLOBALS ============================ */
+    /* ============================    JS: DATABASE & GLOBALS ============================ */
     let matchState = { selected: null, pairsFound: 0 };
+    let tagStats = {}; // <--- ADDED TAG TRACKING VAR
     let qQueue = []; let currentScore = 0; window.integrity = 100;
     let explainTimer = null; let questionsCorrect = 0;
     let questionsAttempted = 0; let isDead = false;
     let hudInterval = null; let sessionTime = 5400; let tempLevel = 0;
     const TEMP_MAX = 60;
-let matchState = { selected: null, pairsFound: 0 };
-let tagStats = {};   // <--- PASTE THIS NEW LINE HERE
-let qQueue = []; let currentScore = 0; window.integrity = 100;
     
     /* === MASTER TAG REFERENCE ===
        Ensure your MASTER_DATABASE questions use these exact tag combinations.
@@ -573,12 +571,14 @@ let qQueue = []; let currentScore = 0; window.integrity = 100;
 
     // PASTE YOUR CLEANED JSON OBJECTS HERE (Between the brackets)
     const MASTER_DATABASE = [
-        
+        // I added one dummy question so the quiz doesn't crash if you test it before adding your own questions.
+        // DELETE THIS AND PASTE YOUR REAL DATA.
+        { tags: ["CORE1", "Hardware"], question: "Sample Question: This is a placeholder. Please insert your database.", options: ["Option A", "Option B", "Option C", "Option D"], answer: 0, explanation: "You need to populate MASTER_DATABASE with your questions." }
     ]; 
 
     function fetchQuestions(tags) { return MASTER_DATABASE.filter(q => tags.every(t => q.tags.includes(t))); }
 
-    /* ============================   JS: VISUAL FX          ============================ */
+    /* ============================    JS: VISUAL FX           ============================ */
     function spawnScanline() {
         if(isDead) return;
         const line = document.createElement('div'); line.className = 'scan-line';
@@ -731,7 +731,7 @@ let qQueue = []; let currentScore = 0; window.integrity = 100;
         addChar();
     }
 
-    /* ============================   JS: GAME STATE         ============================ */
+    /* ============================    JS: GAME STATE          ============================ */
     function startHUD() {
         if (hudInterval) clearInterval(hudInterval);
         hudInterval = setInterval(() => {
@@ -871,7 +871,7 @@ let qQueue = []; let currentScore = 0; window.integrity = 100;
     
     function resetGame() {
         currentScore = 0; integrity = 100; tempLevel = 0; isDead = false; questionsCorrect = 0; questionsAttempted = 0;
-tagStats = {};
+        tagStats = {}; // <--- RESET BREAKDOWN
         document.getElementById('fail-ui').classList.remove('fail-visible'); 
         updateSystemState();
     }
@@ -1030,17 +1030,20 @@ tagStats = {};
     }
 
     function processResult(isCorrect, btn) {
-// --- START TRACKING CODE ---
-        const qTags = window.currentQ.tags;
-        qTags.forEach(tag => {
-            // Filter out the main exam names so we only see topics (like "Hardware")
-            if(tag === 'CORE1' || tag === 'CORE2' || tag === 'NET' || tag === 'SEC') return;
+        // --- START TRACKING CODE ---
+        if(window.currentQ && window.currentQ.tags) {
+            const qTags = window.currentQ.tags;
+            qTags.forEach(tag => {
+                // Filter out main exam tags
+                if(tag === 'CORE1' || tag === 'CORE2' || tag === 'NET' || tag === 'SEC') return;
 
-            if(!tagStats[tag]) tagStats[tag] = { correct: 0, total: 0 };
-            tagStats[tag].total++;
-            if(isCorrect) tagStats[tag].correct++;
-        });
+                if(!tagStats[tag]) tagStats[tag] = { correct: 0, total: 0 };
+                tagStats[tag].total++;
+                if(isCorrect) tagStats[tag].correct++;
+            });
+        }
         // --- END TRACKING CODE ---
+
         questionsAttempted++;
         document.querySelectorAll('.option-btn').forEach(b => b.style.pointerEvents = 'none');
         document.getElementById('pbq-submit-btn').style.display = 'none';
@@ -1099,46 +1102,39 @@ tagStats = {};
     function finish() {
         document.getElementById('quiz-ui').classList.add('hidden');
         document.getElementById('results-ui').classList.remove('hidden');
-        
-        // 1. Calculate Overall Percentage
-        let pct = 0; 
-        if(questionsAttempted > 0) pct = Math.floor((questionsCorrect/questionsAttempted)*100);
-        
-        // 2. Animate the Big Number
-        let i = 0; 
-        const interval = setInterval(() => {
+        let pct = 0; if(questionsAttempted > 0) pct = Math.floor((questionsCorrect/questionsAttempted)*100);
+        let i = 0; const interval = setInterval(() => {
             document.getElementById('final-percent').innerText = `${i}%`;
-            if (i >= pct) clearInterval(interval); 
-            i++;
+            if (i >= pct) clearInterval(interval); i++;
         }, 20);
 
-        // 3. Generate the Breakdown
+        // --- BREAKDOWN GENERATION ---
         const container = document.getElementById('breakdown-container');
-        container.innerHTML = '<h3 style="border-bottom:1px dashed #0affba; padding-bottom:5px;">> MODULE_ANALYSIS:</h3>';
-        
-        if (Object.keys(tagStats).length === 0) {
-            container.innerHTML += '<p>[NO_DATA_GENERATED]</p>';
-        } else {
-            for (const [tag, stat] of Object.entries(tagStats)) {
-                const tagPct = Math.floor((stat.correct / stat.total) * 100);
-                
-                // Color logic: Green = Good, Yellow = Okay, Red = Bad
-                let color = '#ff0000'; 
-                if (tagPct >= 70) color = '#ffff00'; 
-                if (tagPct >= 90) color = '#0affba'; 
+        if(container) {
+            container.innerHTML = '<h3 style="border-bottom:1px dashed #0affba; padding-bottom:5px;">> MODULE_ANALYSIS:</h3>';
+            
+            if (!tagStats || Object.keys(tagStats).length === 0) {
+                container.innerHTML += '<p>[NO_DATA_GENERATED]</p>';
+            } else {
+                for (const [tag, stat] of Object.entries(tagStats)) {
+                    const tagPct = Math.floor((stat.correct / stat.total) * 100);
+                    let color = '#ff0000'; 
+                    if (tagPct >= 70) color = '#ffff00'; 
+                    if (tagPct >= 90) color = '#0affba'; 
 
-                const html = `
-                    <div style="margin-bottom: 15px; font-family: 'VT323', monospace; font-size: 1.2rem;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                            <span>${tag.toUpperCase()}</span>
-                            <span style="color:${color}">${tagPct}% (${stat.correct}/${stat.total})</span>
+                    const html = `
+                        <div style="margin-bottom: 15px; font-family: 'VT323', monospace; font-size: 1.2rem;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                                <span>${tag.toUpperCase()}</span>
+                                <span style="color:${color}">${tagPct}% (${stat.correct}/${stat.total})</span>
+                            </div>
+                            <div style="width: 100%; background: #222; height: 12px; border: 1px solid #555;">
+                                <div style="width: ${tagPct}%; background: ${color}; height: 100%; box-shadow: 0 0 5px ${color};"></div>
+                            </div>
                         </div>
-                        <div style="width: 100%; background: #222; height: 12px; border: 1px solid #555;">
-                            <div style="width: ${tagPct}%; background: ${color}; height: 100%; box-shadow: 0 0 5px ${color};"></div>
-                        </div>
-                    </div>
-                `;
-                container.innerHTML += html;
+                    `;
+                    container.innerHTML += html;
+                }
             }
         }
     }
@@ -1152,4 +1148,3 @@ tagStats = {};
 </script>
 </body>
 </html>
-
